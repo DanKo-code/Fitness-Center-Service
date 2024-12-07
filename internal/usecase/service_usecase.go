@@ -1,0 +1,18 @@
+package usecase
+
+import (
+	"Service/internal/dtos"
+	"Service/internal/models"
+	"context"
+	"github.com/google/uuid"
+)
+
+type ServiceUseCase interface {
+	CreateService(ctx context.Context, cmd *dtos.CreateServiceCommand) (*models.Service, error)
+	GetServiceById(ctx context.Context, id uuid.UUID) (*models.Service, error)
+	UpdateService(ctx context.Context, cmd *dtos.UpdateServiceCommand) (*models.Service, error)
+	DeleteServiceById(ctx context.Context, id uuid.UUID) (*models.Service, error)
+
+	GetServices(ctx context.Context) ([]*models.Service, error)
+	CreateCoachServices(ctx context.Context, cmd *dtos.CreateCoachServicesCommand) ([]*models.Service, error)
+}
