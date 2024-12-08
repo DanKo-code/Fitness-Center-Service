@@ -15,6 +15,8 @@ type ServiceRepository interface {
 
 	GetServices(ctx context.Context) ([]*models.Service, error)
 	CreateCoachServices(ctx context.Context, cmd *dtos.CreateCoachServicesCommand) error
+	CreateAbonementServices(ctx context.Context, cmd *dtos.CreateAbonementServicesCommand) error
 	GetServicesByIds(ctx context.Context, ids []uuid.UUID) ([]*models.Service, error)
 	GetCoachServices(ctx context.Context, id uuid.UUID) ([]*models.Service, error)
+	GetAbonementServices(ctx context.Context, id uuid.UUID) ([]*models.Service, error)
 }

@@ -299,6 +299,43 @@ func (u *ServicegRPC) CreateCoachServices(
 	return createCoachServicesResponse, nil
 }
 
+func (u *ServicegRPC) CreateAbonementServices(
+	ctx context.Context,
+	request *serviceProtobuf.CreateAbonementServicesRequest,
+) (*serviceProtobuf.CreateAbonementServicesResponse, error) {
+
+	var servicesIds []uuid.UUID
+	for _, serviceId := range request.AbonementService.ServiceId {
+		servicesIds = append(servicesIds, uuid.MustParse(serviceId))
+	}
+
+	cmd := &dtos.CreateAbonementServicesCommand{
+		AbonementId: uuid.MustParse(request.AbonementService.AbonementId),
+		ServicesIds: servicesIds,
+	}
+
+	abonementServices, err := u.ServiceUseCase.CreateAbonemntServices(ctx, cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	var abonementServicesIds []string
+	for _, abonementService := range abonementServices {
+		abonementServicesIds = append(abonementServicesIds, abonementService.Id.String())
+	}
+
+	abonementService := &serviceProtobuf.AbonementService{
+		AbonementId: request.AbonementService.AbonementId,
+		ServiceId:   abonementServicesIds,
+	}
+
+	createAbonementServicesResponse := &serviceProtobuf.CreateAbonementServicesResponse{
+		AbonementService: abonementService,
+	}
+
+	return createAbonementServicesResponse, nil
+}
+
 func GetObjectData[T any, R any](
 	g *grpc.ClientStreamingServer[T, R],
 	extractObjectData func(chunk *T) interface{},

@@ -10,6 +10,7 @@ import (
 	"Service/pkg/logger"
 	"context"
 	"fmt"
+	abonementGRPC "github.com/DanKo-code/FitnessCenter-Protobuf/gen/FitnessCenter.protobuf.abonement"
 	coachGRPC "github.com/DanKo-code/FitnessCenter-Protobuf/gen/FitnessCenter.protobuf.coach"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -42,11 +43,18 @@ func NewAppGRPC(cloudConfig *models.CloudConfig) (*AppGRPC, error) {
 		return nil, err
 	}
 
+	connAbonement, err := grpc.NewClient(os.Getenv("ABONEMENT_SERVICE_PORT"), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logger.ErrorLogger.Printf("failed to connect to abonement server: %v", err)
+		return nil, err
+	}
+
 	coachClient := coachGRPC.NewCoachClient(connCoach)
+	abonementClient := abonementGRPC.NewAbonementClient(connAbonement)
 
 	repository := postgres.NewServiceRepository(db)
 
-	serviceUseCase := service_usecase.NewServiceUseCase(repository, &coachClient)
+	serviceUseCase := service_usecase.NewServiceUseCase(repository, &coachClient, &abonementClient)
 
 	awsCfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion(cloudConfig.Region),

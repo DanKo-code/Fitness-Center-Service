@@ -142,6 +142,29 @@ func (serviceRep *ServiceRepository) CreateCoachServices(ctx context.Context, cm
 	return nil
 }
 
+func (serviceRep *ServiceRepository) CreateAbonementServices(ctx context.Context, cmd *dtos.CreateAbonementServicesCommand) error {
+
+	query := `
+	INSERT INTO "abonement_service" (abonement_id, service_id)
+	VALUES (:abonement_id, :service_id)
+`
+	var values []map[string]interface{}
+	for _, serviceId := range cmd.ServicesIds {
+		values = append(values, map[string]interface{}{
+			"abonement_id": cmd.AbonementId,
+			"service_id":   serviceId,
+		})
+	}
+
+	_, err := serviceRep.db.NamedExecContext(ctx, query, values)
+	if err != nil {
+		logger.ErrorLogger.Printf("Error CreateAbonementServices: %v", err)
+		return err
+	}
+
+	return nil
+}
+
 func (serviceRep *ServiceRepository) GetServicesByIds(ctx context.Context, ids []uuid.UUID) ([]*models.Service, error) {
 	query := `SELECT id, title, photo, created_time, updated_time 
 			  FROM "service"
@@ -166,7 +189,25 @@ func (serviceRep *ServiceRepository) GetServicesByIds(ctx context.Context, ids [
 
 func (serviceRep *ServiceRepository) GetCoachServices(ctx context.Context, id uuid.UUID) ([]*models.Service, error) {
 	var services []*models.Service
-	err := serviceRep.db.SelectContext(ctx, &services, `SELECT id, title, photo, created_time, updated_time FROM "service" WHERE id = $1`, id)
+	err := serviceRep.db.SelectContext(ctx, &services,
+		`SELECT id, title, photo, created_time, updated_time
+		 FROM "service"
+	     JOIN "coach_service" on service.id = coach_service.service_id
+		 WHERE id = $1`, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return services, nil
+}
+
+func (serviceRep *ServiceRepository) GetAbonementServices(ctx context.Context, id uuid.UUID) ([]*models.Service, error) {
+	var services []*models.Service
+	err := serviceRep.db.SelectContext(ctx, &services,
+		`SELECT id, title, photo, created_time, updated_time 
+		 FROM "service"
+		 JOIN "abonement_service" on service.id = abonement_service.service_id
+		 WHERE id = $1`, id)
 	if err != nil {
 		return nil, err
 	}

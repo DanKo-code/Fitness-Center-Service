@@ -6,6 +6,7 @@ import (
 	"Service/internal/models"
 	"Service/internal/repository"
 	"context"
+	abonementGRPC "github.com/DanKo-code/FitnessCenter-Protobuf/gen/FitnessCenter.protobuf.abonement"
 	coachGRPC "github.com/DanKo-code/FitnessCenter-Protobuf/gen/FitnessCenter.protobuf.coach"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
@@ -14,17 +15,20 @@ import (
 )
 
 type ServiceUseCase struct {
-	serviceRepo repository.ServiceRepository
-	coachClient *coachGRPC.CoachClient
+	serviceRepo     repository.ServiceRepository
+	coachClient     *coachGRPC.CoachClient
+	abonementClient *abonementGRPC.AbonementClient
 }
 
 func NewServiceUseCase(
 	serviceRepo repository.ServiceRepository,
 	coachClient *coachGRPC.CoachClient,
+	abonementClient *abonementGRPC.AbonementClient,
 ) *ServiceUseCase {
 	return &ServiceUseCase{
-		serviceRepo: serviceRepo,
-		coachClient: coachClient,
+		serviceRepo:     serviceRepo,
+		coachClient:     coachClient,
+		abonementClient: abonementClient,
 	}
 }
 
@@ -126,6 +130,45 @@ func (u *ServiceUseCase) CreateCoachServices(ctx context.Context, cmd *dtos.Crea
 	}
 
 	services, err := u.serviceRepo.GetCoachServices(ctx, cmd.CoachId)
+	if err != nil {
+		return nil, err
+	}
+
+	return services, nil
+}
+
+func (u *ServiceUseCase) CreateAbonemntServices(ctx context.Context, cmd *dtos.CreateAbonementServicesCommand) ([]*models.Service, error) {
+
+	getAbonementByIdRequest := &abonementGRPC.GetAbonementByIdRequest{Id: cmd.AbonementId.String()}
+
+	_, err := (*u.abonementClient).GetAbonementById(ctx, getAbonementByIdRequest)
+	if err != nil {
+
+		st, ok := status.FromError(err)
+
+		if !ok {
+			return nil, nil
+		}
+
+		switch st.Code() {
+		case codes.NotFound:
+			return nil, customErrors.AbonementNotFound
+		default:
+			return nil, customErrors.InternalAbonementServerError
+		}
+	}
+
+	_, err = u.serviceRepo.GetServicesByIds(ctx, cmd.ServicesIds)
+	if err != nil {
+		return nil, err
+	}
+
+	err = u.serviceRepo.CreateAbonementServices(ctx, cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	services, err := u.serviceRepo.GetAbonementServices(ctx, cmd.AbonementId)
 	if err != nil {
 		return nil, err
 	}
