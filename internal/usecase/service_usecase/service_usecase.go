@@ -175,3 +175,12 @@ func (u *ServiceUseCase) CreateAbonemntServices(ctx context.Context, cmd *dtos.C
 
 	return services, nil
 }
+
+func (u *ServiceUseCase) GetAbonementsServices(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID][]*models.Service, error) {
+	services, err := u.serviceRepo.GetAbonementsServices(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	return services, nil
+}

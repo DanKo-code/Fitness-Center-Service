@@ -16,7 +16,7 @@ require (
 )
 
 require (
-	github.com/DanKo-code/FitnessCenter-Protobuf v0.4.1
+	github.com/DanKo-code/FitnessCenter-Protobuf v0.6.6
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.7 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.20 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.24 // indirect

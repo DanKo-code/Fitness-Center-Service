@@ -19,4 +19,5 @@ type ServiceRepository interface {
 	GetServicesByIds(ctx context.Context, ids []uuid.UUID) ([]*models.Service, error)
 	GetCoachServices(ctx context.Context, id uuid.UUID) ([]*models.Service, error)
 	GetAbonementServices(ctx context.Context, id uuid.UUID) ([]*models.Service, error)
+	GetAbonementsServices(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID][]*models.Service, error)
 }

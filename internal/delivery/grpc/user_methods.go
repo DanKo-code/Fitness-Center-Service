@@ -336,6 +336,53 @@ func (u *ServicegRPC) CreateAbonementServices(
 	return createAbonementServicesResponse, nil
 }
 
+func (u *ServicegRPC) GetAbonementsServices(
+	ctx context.Context,
+	request *serviceProtobuf.GetAbonementsServicesRequest,
+) (*serviceProtobuf.GetAbonementsServicesResponse, error) {
+
+	var abonementIdsUUID []uuid.UUID
+	for _, id := range request.AbonementIds {
+		abonementIdsUUID = append(abonementIdsUUID, uuid.MustParse(id))
+	}
+
+	abonementIdWithServicesResponse, err := u.ServiceUseCase.GetAbonementsServices(ctx, abonementIdsUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	getAbonementsServicesResponse := &serviceProtobuf.GetAbonementsServicesResponse{}
+
+	for ai, aiws := range abonementIdWithServicesResponse {
+
+		abonementIdWithServices := &serviceProtobuf.AbonementIdWithServices{
+			AbonementId:    ai.String(),
+			ServiceObjects: nil,
+		}
+
+		for _, service := range aiws {
+
+			serviceObject := &serviceProtobuf.ServiceObject{
+				Id:          service.Id.String(),
+				Title:       service.Title,
+				Photo:       service.Photo,
+				CreatedTime: service.CreatedTime.String(),
+				UpdatedTime: service.UpdatedTime.String(),
+			}
+
+			abonementIdWithServices.ServiceObjects = append(abonementIdWithServices.ServiceObjects, serviceObject)
+		}
+
+		getAbonementsServicesResponse.AbonementIdsWithServices =
+			append(
+				getAbonementsServicesResponse.AbonementIdsWithServices,
+				abonementIdWithServices,
+			)
+	}
+
+	return getAbonementsServicesResponse, nil
+}
+
 func GetObjectData[T any, R any](
 	g *grpc.ClientStreamingServer[T, R],
 	extractObjectData func(chunk *T) interface{},
