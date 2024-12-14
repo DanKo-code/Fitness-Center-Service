@@ -17,4 +17,5 @@ type ServiceUseCase interface {
 	CreateCoachServices(ctx context.Context, cmd *dtos.CreateCoachServicesCommand) ([]*models.Service, error)
 	CreateAbonemntServices(ctx context.Context, cmd *dtos.CreateAbonementServicesCommand) ([]*models.Service, error)
 	GetAbonementsServices(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID][]*models.Service, error)
+	GetCoachesServices(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID][]*models.Service, error)
 }

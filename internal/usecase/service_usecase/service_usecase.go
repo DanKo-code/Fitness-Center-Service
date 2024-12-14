@@ -184,3 +184,12 @@ func (u *ServiceUseCase) GetAbonementsServices(ctx context.Context, ids []uuid.U
 
 	return services, nil
 }
+
+func (u *ServiceUseCase) GetCoachesServices(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID][]*models.Service, error) {
+	services, err := u.serviceRepo.GetCoachesServices(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	return services, nil
+}

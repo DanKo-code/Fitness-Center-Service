@@ -383,6 +383,52 @@ func (u *ServicegRPC) GetAbonementsServices(
 	return getAbonementsServicesResponse, nil
 }
 
+func (u *ServicegRPC) GetCoachesServices(
+	ctx context.Context,
+	request *serviceProtobuf.GetCoachesServicesRequest,
+) (*serviceProtobuf.GetCoachesServicesResponse, error) {
+
+	var coachIdsUUID []uuid.UUID
+	for _, id := range request.CoachIds {
+		coachIdsUUID = append(coachIdsUUID, uuid.MustParse(id))
+	}
+
+	coachIdWithServicesResponse, err := u.ServiceUseCase.GetCoachesServices(ctx, coachIdsUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	getCoachesServicesResponse := &serviceProtobuf.GetCoachesServicesResponse{}
+	for ai, aiws := range coachIdWithServicesResponse {
+
+		coachIdWithServices := &serviceProtobuf.CoachIdWithServices{
+			CoachId:        ai.String(),
+			ServiceObjects: nil,
+		}
+
+		for _, service := range aiws {
+
+			serviceObject := &serviceProtobuf.ServiceObject{
+				Id:          service.Id.String(),
+				Title:       service.Title,
+				Photo:       service.Photo,
+				CreatedTime: service.CreatedTime.String(),
+				UpdatedTime: service.UpdatedTime.String(),
+			}
+
+			coachIdWithServices.ServiceObjects = append(coachIdWithServices.ServiceObjects, serviceObject)
+		}
+
+		getCoachesServicesResponse.CoachIdsWithServices =
+			append(
+				getCoachesServicesResponse.CoachIdsWithServices,
+				coachIdWithServices,
+			)
+	}
+
+	return getCoachesServicesResponse, nil
+}
+
 func GetObjectData[T any, R any](
 	g *grpc.ClientStreamingServer[T, R],
 	extractObjectData func(chunk *T) interface{},

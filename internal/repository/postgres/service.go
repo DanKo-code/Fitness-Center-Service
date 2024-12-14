@@ -262,3 +262,49 @@ func (serviceRep *ServiceRepository) GetAbonementsServices(ctx context.Context, 
 
 	return abonementServices, nil
 }
+
+func (serviceRep *ServiceRepository) GetCoachesServices(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID][]*models.Service, error) {
+	coachServices := make(map[uuid.UUID][]*models.Service)
+
+	if len(ids) == 0 {
+		return coachServices, nil
+	}
+
+	query := `
+		SELECT coach_service.coach_id, service.id, service.title, service.photo, service.created_time, service.updated_time
+		FROM "service"
+		JOIN "coach_service" ON service.id = coach_service.service_id
+		WHERE coach_service.coach_id = ANY($1)
+	`
+
+	type resultRow struct {
+		CoachID     uuid.UUID `db:"coach_id"`
+		Id          uuid.UUID `db:"id"`
+		Title       string    `db:"title"`
+		Photo       string    `db:"photo"`
+		CreatedTime time.Time `db:"created_time"`
+		UpdatedTime time.Time `db:"updated_time"`
+	}
+
+	var rows []resultRow
+
+	err := serviceRep.db.SelectContext(ctx, &rows, query, pq.Array(ids))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, row := range rows {
+
+		service := &models.Service{
+			Id:          row.Id,
+			Title:       row.Title,
+			Photo:       row.Photo,
+			CreatedTime: row.CreatedTime,
+			UpdatedTime: row.UpdatedTime,
+		}
+
+		coachServices[row.CoachID] = append(coachServices[row.CoachID], service)
+	}
+
+	return coachServices, nil
+}
