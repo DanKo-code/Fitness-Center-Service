@@ -209,7 +209,7 @@ func (serviceRep *ServiceRepository) GetAbonementServices(ctx context.Context, i
 		`SELECT id, title, photo, created_time, updated_time 
 		 FROM "service"
 		 JOIN "abonement_service" on service.id = abonement_service.service_id
-		 WHERE id = $1`, id)
+		 WHERE abonement_service.abonement_id = $1`, id)
 	if err != nil {
 		return nil, err
 	}
