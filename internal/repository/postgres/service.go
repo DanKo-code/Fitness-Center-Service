@@ -167,6 +167,47 @@ func (serviceRep *ServiceRepository) CreateAbonementServices(ctx context.Context
 	return nil
 }
 
+func (serviceRep *ServiceRepository) UpdateAbonementServices(ctx context.Context, abonementId uuid.UUID, servicesIds []uuid.UUID) error {
+	txx, err := serviceRep.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to start transaction: %w", err)
+	}
+
+	defer func() {
+		if err != nil {
+			_ = txx.Rollback()
+		}
+	}()
+
+	deleteQuery := `
+		DELETE FROM abonement_service
+		WHERE abonement_id = $1
+	`
+
+	_, err = txx.ExecContext(ctx, deleteQuery, abonementId)
+	if err != nil {
+		return fmt.Errorf("failed to delete abonement services: %w", err)
+	}
+
+	insertQuery := `
+		INSERT INTO abonement_service (abonement_id, service_id)
+		VALUES ($1, $2)
+	`
+
+	for _, serviceId := range servicesIds {
+		_, err = txx.ExecContext(ctx, insertQuery, abonementId, serviceId)
+		if err != nil {
+			return fmt.Errorf("failed to insert service_id %v: %w", serviceId, err)
+		}
+	}
+
+	if err := txx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
+
 func (serviceRep *ServiceRepository) GetServicesByIds(ctx context.Context, ids []uuid.UUID) ([]*models.Service, error) {
 	query := `SELECT id, title, photo, created_time, updated_time 
 			  FROM "service"

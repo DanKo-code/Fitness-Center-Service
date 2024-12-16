@@ -185,6 +185,45 @@ func (u *ServiceUseCase) GetAbonementsServices(ctx context.Context, ids []uuid.U
 	return services, nil
 }
 
+func (u *ServiceUseCase) UpdateAbonementServices(ctx context.Context, abonementId uuid.UUID, servicesIds []uuid.UUID) ([]*models.Service, error) {
+
+	getAbonementByIdRequest := &abonementGRPC.GetAbonementByIdRequest{Id: abonementId.String()}
+
+	_, err := (*u.abonementClient).GetAbonementById(ctx, getAbonementByIdRequest)
+	if err != nil {
+
+		st, ok := status.FromError(err)
+
+		if !ok {
+			return nil, nil
+		}
+
+		switch st.Code() {
+		case codes.NotFound:
+			return nil, customErrors.AbonementNotFound
+		default:
+			return nil, customErrors.InternalAbonementServerError
+		}
+	}
+
+	_, err = u.serviceRepo.GetServicesByIds(ctx, servicesIds)
+	if err != nil {
+		return nil, err
+	}
+
+	err = u.serviceRepo.UpdateAbonementServices(ctx, abonementId, servicesIds)
+	if err != nil {
+		return nil, err
+	}
+
+	services, err := u.serviceRepo.GetAbonementServices(ctx, abonementId)
+	if err != nil {
+		return nil, err
+	}
+
+	return services, nil
+}
+
 func (u *ServiceUseCase) GetCoachesServices(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID][]*models.Service, error) {
 	services, err := u.serviceRepo.GetCoachesServices(ctx, ids)
 	if err != nil {

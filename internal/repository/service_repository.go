@@ -21,4 +21,5 @@ type ServiceRepository interface {
 	GetAbonementServices(ctx context.Context, id uuid.UUID) ([]*models.Service, error)
 	GetAbonementsServices(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID][]*models.Service, error)
 	GetCoachesServices(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID][]*models.Service, error)
+	UpdateAbonementServices(ctx context.Context, abonementId uuid.UUID, servicesIds []uuid.UUID) error
 }
