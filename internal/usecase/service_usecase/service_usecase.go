@@ -224,6 +224,44 @@ func (u *ServiceUseCase) UpdateAbonementServices(ctx context.Context, abonementI
 	return services, nil
 }
 
+func (u *ServiceUseCase) UpdateCoachServices(ctx context.Context, coachId uuid.UUID, servicesIds []uuid.UUID) ([]*models.Service, error) {
+	getCoachByIdRequest := &coachGRPC.GetCoachByIdRequest{Id: coachId.String()}
+
+	_, err := (*u.coachClient).GetCoachById(ctx, getCoachByIdRequest)
+	if err != nil {
+
+		st, ok := status.FromError(err)
+
+		if !ok {
+			return nil, nil
+		}
+
+		switch st.Code() {
+		case codes.NotFound:
+			return nil, customErrors.CoachNotFound
+		default:
+			return nil, customErrors.InternalCoachServerError
+		}
+	}
+
+	_, err = u.serviceRepo.GetServicesByIds(ctx, servicesIds)
+	if err != nil {
+		return nil, err
+	}
+
+	err = u.serviceRepo.UpdateCoachServices(ctx, coachId, servicesIds)
+	if err != nil {
+		return nil, err
+	}
+
+	services, err := u.serviceRepo.GetCoachServices(ctx, coachId)
+	if err != nil {
+		return nil, err
+	}
+
+	return services, nil
+}
+
 func (u *ServiceUseCase) GetCoachesServices(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID][]*models.Service, error) {
 	services, err := u.serviceRepo.GetCoachesServices(ctx, ids)
 	if err != nil {

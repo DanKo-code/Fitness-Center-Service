@@ -19,4 +19,5 @@ type ServiceUseCase interface {
 	GetAbonementsServices(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID][]*models.Service, error)
 	GetCoachesServices(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID][]*models.Service, error)
 	UpdateAbonementServices(ctx context.Context, abonementId uuid.UUID, servicesIds []uuid.UUID) ([]*models.Service, error)
+	UpdateCoachServices(ctx context.Context, coachId uuid.UUID, servicesIds []uuid.UUID) ([]*models.Service, error)
 }

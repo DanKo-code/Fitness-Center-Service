@@ -461,6 +461,37 @@ func (u *ServicegRPC) UpdateAbonementServices(
 	return updateAbonementServicesResponse, nil
 }
 
+func (u *ServicegRPC) UpdateCoachServices(
+	ctx context.Context,
+	request *serviceProtobuf.UpdateCoachServicesRequest,
+) (*serviceProtobuf.UpdateCoachServicesResponse, error) {
+	var servicesIds []uuid.UUID
+	for _, serviceId := range request.CoachService.ServiceId {
+		servicesIds = append(servicesIds, uuid.MustParse(serviceId))
+	}
+
+	coachServices, err := u.ServiceUseCase.UpdateCoachServices(ctx, uuid.MustParse(request.CoachService.CoachId), servicesIds)
+	if err != nil {
+		return nil, err
+	}
+
+	var coachServicesIds []string
+	for _, coachService := range coachServices {
+		coachServicesIds = append(coachServicesIds, coachService.Id.String())
+	}
+
+	coachService := &serviceProtobuf.CoachService{
+		CoachId:   request.CoachService.CoachId,
+		ServiceId: coachServicesIds,
+	}
+
+	updateCoachServicesResponse := &serviceProtobuf.UpdateCoachServicesResponse{
+		CoachService: coachService,
+	}
+
+	return updateCoachServicesResponse, nil
+}
+
 func GetObjectData[T any, R any](
 	g *grpc.ClientStreamingServer[T, R],
 	extractObjectData func(chunk *T) interface{},
