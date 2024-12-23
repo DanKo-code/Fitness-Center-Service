@@ -2,6 +2,7 @@ package server
 
 import (
 	serviceGRPC "Service/internal/delivery/grpc"
+	"Service/internal/dtos"
 	"Service/internal/models"
 	"Service/internal/repository/postgres"
 	"Service/internal/usecase"
@@ -16,10 +17,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"io/ioutil"
 	"net"
 	"os"
 	"os/signal"
@@ -76,6 +79,12 @@ func NewAppGRPC(cloudConfig *models.CloudConfig) (*AppGRPC, error) {
 
 	serviceGRPC.Register(gRPCServer, serviceUseCase, localStackUseCase)
 
+	//to do initial insert if no data
+	err = insertInitServices(serviceUseCase, localStackUseCase)
+	if err != nil {
+		return nil, err
+	}
+
 	return &AppGRPC{
 		gRPCServer:     gRPCServer,
 		serviceUseCase: serviceUseCase,
@@ -131,4 +140,94 @@ func initDB() *sqlx.DB {
 	logger.InfoLogger.Println("Successfully connected to db")
 
 	return db
+}
+
+func insertInitServices(serviceUseCase usecase.ServiceUseCase, cloudUseCase usecase.CloudUseCase) error {
+
+	services, err := serviceUseCase.GetServices(context.TODO())
+	if err != nil {
+		return err
+	}
+
+	if len(services) != 0 {
+		return nil
+	}
+
+	//gym insert
+	gymPhotoBytes, err := readImageToBytes("internal/images/gym.png")
+	if err != nil {
+		return err
+	}
+	randomGymID := uuid.New().String()
+	gymUrl, err := cloudUseCase.PutObject(context.TODO(), gymPhotoBytes, "service/"+randomGymID)
+	if err != nil {
+		return err
+	}
+	gymServiceReq := &dtos.CreateServiceCommand{
+		Id:    uuid.New(),
+		Title: "gym",
+		Photo: gymUrl,
+	}
+	_, err = serviceUseCase.CreateService(context.TODO(), gymServiceReq)
+	if err != nil {
+		return err
+	}
+
+	//gym sauna
+	saunaPhotoBytes, err := readImageToBytes("internal/images/sauna.png")
+	if err != nil {
+		return err
+	}
+	randomSaunaID := uuid.New().String()
+	saunaUrl, err := cloudUseCase.PutObject(context.TODO(), saunaPhotoBytes, "service/"+randomSaunaID)
+	if err != nil {
+		return err
+	}
+	saunaServiceReq := &dtos.CreateServiceCommand{
+		Id:    uuid.New(),
+		Title: "sauna",
+		Photo: saunaUrl,
+	}
+	_, err = serviceUseCase.CreateService(context.TODO(), saunaServiceReq)
+	if err != nil {
+		return err
+	}
+
+	//gym swimming-pool
+	swimmingPoolPhotoBytes, err := readImageToBytes("internal/images/swimming-pool.png")
+	if err != nil {
+		return err
+	}
+	randomSwimmingPoolID := uuid.New().String()
+	swimmingPoolUrl, err := cloudUseCase.PutObject(context.TODO(), swimmingPoolPhotoBytes, "service/"+randomSwimmingPoolID)
+	if err != nil {
+		return err
+	}
+	swimmingPoolServiceReq := &dtos.CreateServiceCommand{
+		Id:    uuid.New(),
+		Title: "swimming-pool",
+		Photo: swimmingPoolUrl,
+	}
+	_, err = serviceUseCase.CreateService(context.TODO(), swimmingPoolServiceReq)
+	if err != nil {
+		return err
+	}
+
+	logger.InfoLogger.Printf("Init Services successfully inserted")
+	return nil
+}
+
+func readImageToBytes(filePath string) ([]byte, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("не удалось открыть файл: %w", err)
+	}
+	defer file.Close()
+
+	imageBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("не удалось прочитать файл: %w", err)
+	}
+
+	return imageBytes, nil
 }
